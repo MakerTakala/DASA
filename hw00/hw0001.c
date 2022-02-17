@@ -27,8 +27,24 @@ void div_two (int8_t num[]) {
         carry = tmp;
     }
 }
-void sub (int8_t dividend[], int8_t divisor[]) {
-
+void sub (int8_t a[], int8_t b[]) {
+    for (int i = MAX_BIT - 1; i >= 0; i--) {
+        a[i] -= b[i];
+        if (a[i] < 0) {
+            a[i - 1]--;
+            a[i] += 10;
+        }
+    }
+}
+void compare (int8_t **a, int8_t **b) {
+    for (int i = 0; i < MAX_BIT; i++) {
+        if ((*a)[i] < (*b)[i]) {
+            int8_t *tmp = *a;
+            *a = *b;
+            *b = tmp;
+            return;
+        }
+    }
 }
 
 int main() {
@@ -38,15 +54,21 @@ int main() {
     scanf("%s %s", char_m, char_n);
     preprocess(char_m, m);
     preprocess(char_n, n);
-    mul_two(m);
-    div_two(n);
+
+
+
+
+    
+    int8_t *pMAX = m, *pMIN = n;
+    compare(&pMAX, &pMIN);
+
 
     for(int i = 0; i < 256; i++){
-        printf("%d", m[i]);
+        printf("%d", pMAX[i]);
     }
     printf("\n\n");
     for(int i = 0; i < 256; i++){
-        printf("%d", n[i]);
+        printf("%d", pMIN[i]);
     }
     return 0;
 }
