@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 #define MAX_BIT 256
 
 void preprocess (char char_num[], int8_t num[]) {
@@ -38,6 +39,9 @@ void sub (int8_t a[], int8_t b[]) {
 }
 void compare (int8_t **a, int8_t **b) {
     for (int i = 0; i < MAX_BIT; i++) {
+        if ((*a)[i] > (*b)[i]){
+            return;
+        }
         if ((*a)[i] < (*b)[i]) {
             int8_t *tmp = *a;
             *a = *b;
@@ -47,6 +51,27 @@ void compare (int8_t **a, int8_t **b) {
     }
 }
 
+bool iszero (int8_t *num) {
+    for(int i = 0; i < MAX_BIT; i++){
+        if(num[i] != 0){
+            return false;
+        }
+    }
+    return true;
+}
+
+void print(int8_t num[]){
+    
+    int i = 0;
+    while(num[i] == 0){
+        i++;
+    }
+    for(; i < MAX_BIT; i++){
+        printf("%d", num[i]);
+    }
+    printf("\n");
+}
+
 int main() {
 
     char char_m[MAX_BIT] = {0}, char_n[MAX_BIT] = {0};
@@ -54,21 +79,35 @@ int main() {
     scanf("%s %s", char_m, char_n);
     preprocess(char_m, m);
     preprocess(char_n, n);
-
-
-
-
-    
     int8_t *pMAX = m, *pMIN = n;
     compare(&pMAX, &pMIN);
+    
+    int8_t ans[MAX_BIT] = {0};
+    ans[MAX_BIT - 1] = 1;
+
+    int j = 0;
 
 
-    for(int i = 0; i < 256; i++){
-        printf("%d", pMAX[i]);
+    while (!iszero(pMAX) && !iszero(pMIN)) {
+        if ( !(pMAX[MAX_BIT - 1] & 1) && !(pMIN[MAX_BIT - 1] & 1) ) {
+            mul_two(ans);
+            div_two(pMAX);
+            div_two(pMIN);
+        }
+        else if (!(pMAX[MAX_BIT - 1] & 1)) {
+            div_two(pMAX);
+        }
+        else if (!(pMIN[MAX_BIT - 1] & 1)) {
+            div_two(pMIN);
+        }
+        compare(&pMAX, &pMIN);
+        sub(pMAX, pMIN);
+
+        print(pMAX);
+        print(pMIN);
+        printf("\n\n");
     }
-    printf("\n\n");
-    for(int i = 0; i < 256; i++){
-        printf("%d", pMIN[i]);
-    }
+    print(ans);
+
     return 0;
 }
