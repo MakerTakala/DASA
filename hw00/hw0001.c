@@ -52,24 +52,12 @@ void compare (int8_t **a, int8_t **b) {
 }
 
 bool iszero (int8_t *num) {
-    for(int i = 0; i < MAX_BIT; i++){
-        if(num[i] != 0){
+    for (int i = 0; i < MAX_BIT; i++) {
+        if (num[i] != 0) {
             return false;
         }
     }
     return true;
-}
-
-void print(int8_t num[]){
-    
-    int i = 0;
-    while(num[i] == 0){
-        i++;
-    }
-    for(; i < MAX_BIT; i++){
-        printf("%d", num[i]);
-    }
-    printf("\n");
 }
 
 int main() {
@@ -82,15 +70,12 @@ int main() {
     int8_t *pMAX = m, *pMIN = n;
     compare(&pMAX, &pMIN);
     
-    int8_t ans[MAX_BIT] = {0};
-    ans[MAX_BIT - 1] = 1;
-
-    int j = 0;
-
+    int8_t binary[MAX_BIT] = {0};
+    binary[MAX_BIT - 1] = 1;
 
     while (!iszero(pMAX) && !iszero(pMIN)) {
         if ( !(pMAX[MAX_BIT - 1] & 1) && !(pMIN[MAX_BIT - 1] & 1) ) {
-            mul_two(ans);
+            mul_two(binary);
             div_two(pMAX);
             div_two(pMIN);
         }
@@ -102,12 +87,20 @@ int main() {
         }
         compare(&pMAX, &pMIN);
         sub(pMAX, pMIN);
-
-        print(pMAX);
-        print(pMIN);
-        printf("\n\n");
     }
-    print(ans);
+    while (!iszero(binary)) {
+        div_two(binary);
+        mul_two(pMIN);
+    }
+    div_two(pMIN);
+
+    int i = 0;
+    while (pMIN[i] == 0) {
+        i++;
+    } 
+    while (i < MAX_BIT) {
+        printf("%d", pMIN[i++]);
+    }
 
     return 0;
 }
