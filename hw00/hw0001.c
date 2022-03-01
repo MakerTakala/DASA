@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#define MAX_BIT 256
+#define MAX_BIT 257
 
 void preprocess (char char_num[], int8_t num[]) {
     int len = strlen(char_num);
