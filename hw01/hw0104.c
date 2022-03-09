@@ -36,7 +36,7 @@ int main() {
             while( !char_stack_empty( &operator_stack ) ) {
                 int64_stack_push( &number_stack, calculate( &operator_stack, &number_stack ) );
             }
-            printf("print: %ld\n", int64_stack_top( &number_stack ) );
+            printf("Print: %ld\n", int64_stack_top( &number_stack ) );
         }
         else if( isdigit(*cur) ) {
             int64_t num = *cur - '0';
