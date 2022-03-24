@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <math.h>
 #define MAX_LENGTH 1000000
 
 typedef struct {
@@ -92,7 +93,7 @@ int64_t calculate( _char_stack *operator_stack, _int64_stack *number_stack ) {
     if(oper == '+') return num1 + num2;
     if(oper == '-') return num1 - num2;
     if(oper == '*') return num1 * num2;
-    if(oper == '/') return num1 / num2;
+    if(oper == '/') return floorl((long double)num1 / (long double)num2);
     if(oper == '%') return num1 % num2;
 }
 

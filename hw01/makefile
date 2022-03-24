@@ -1,7 +1,8 @@
 SRC = $(wildcard *.c)
 
 all:$(SRC:.c=.o)
-	gcc hw0104.o -o hw0104
+	gcc calculate.o -o calculate -lm
+	gcc purple_cow.o -o purple_cow
 	make clean
 
 .PHONY : new zip clean cleanexe
