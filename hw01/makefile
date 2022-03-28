@@ -3,6 +3,7 @@ SRC = $(wildcard *.c)
 all:$(SRC:.c=.o)
 	gcc calculate.o -o calculate -lm
 	gcc purple_cow.o -o purple_cow
+	gcc xor_purple_cow.c -o xor_purple_cow
 	make clean
 
 .PHONY : new zip clean cleanexe
