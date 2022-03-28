@@ -8,39 +8,100 @@
 typedef struct Student {
     uint64_t id;
     uint64_t group;
-    bool flag;
-    struct Student *next;
-    struct Student *prev;
+    struct Student *link;
 }Student;
 
+typedef struct Bathroom {
+    Student *head;
+    Student *tail;
+    Student **group_head;
+    Student **group_tail;
+    Student **next_group;
+    Student **prev_group;
+}Bathroom;
+
+
+Bathroom *bathroom;
+uint64_t bathroom_size = 0, situation = 0, group_size = 0;
+bool *close_bathroom;
+
+Student *XOR( Student *a, Student *b );
+void travel();
 void enter( uint64_t group_id, uint64_t id, uint64_t bathroom_id );
 void leave( uint64_t bathroom_id );
 void go( uint64_t bathroom_id );
 void close( uint64_t bathroom_id );
-void travel();
+void debug() {
+    printf("\nBATHROOM_HEAD:\n");
+        for( int i = 0; i < bathroom_size; i++ ) {
+            printf("%p", (bathroom + i)->head );
+            if( (bathroom + i)->head  != NULL) {
+                printf("(%lu)", (bathroom + i)->head->id);
+            }
+            printf(" ");
+        }
+        printf("\n");
 
-
-Student *dummy_bathroom_head;
-Student **bathroom_tail;
-Student ***bathroom_group_tail;
-Student ***bathroom_group_head;
-bool *close_bathroom;
-uint64_t bathroom_size = 0, situation = 0, group_size = 0;
+        printf("\nHEAD:\n");
+        for( int i = 0; i < bathroom_size; i++ ) {
+            for( int j = 0; j < group_size; j++ ) {
+                printf("%p", *((bathroom + i)->group_head + j) );
+                if( *((bathroom + i)->group_head + j) != NULL) {
+                    printf("(%lu)", (*((bathroom + i)->group_head + j))->id);
+                }
+                printf(" ");
+            }
+            printf("\n");
+        }
+        printf("\nTAIL:\n");
+        for( int i = 0; i < bathroom_size; i++ ) {
+            for( int j = 0; j < group_size; j++ ) {
+                printf("%p", *((bathroom + i)->group_tail + j) );
+                if( *((bathroom + i)->group_tail + j) != NULL) {
+                    printf("(%lu)", (*((bathroom + i)->group_tail + j))->id);
+                }
+                printf(" ");
+            }
+            printf("\n");
+        }
+        printf("\nNEXT_GROUP:\n");
+        for( int i = 0; i < bathroom_size; i++ ) {
+            for( int j = 0; j < group_size; j++ ) {
+                printf("%p", *((bathroom + i)->next_group + j));
+                if( *((bathroom + i)->next_group + j) != NULL) {
+                    printf("(%lu)", (*((bathroom + i)->next_group + j))->id);
+                }
+                printf(" ");
+            }
+            printf("\n");
+        }
+        printf("\nPREV_GROUP:\n");
+        for( int i = 0; i < bathroom_size; i++ ) {
+            for( int j = 0; j < group_size; j++ ) {
+                printf("%p", *((bathroom + i)->prev_group + j));
+                if( *((bathroom + i)->prev_group + j) != NULL) {
+                    printf("(%lu)", (*((bathroom + i)->prev_group + j))->id);
+                }
+                printf(" ");
+            }
+            printf("\n");
+        }
+        printf("\n");
+        travel();
+        printf("-------------\n");
+}
 
 int main() {
 
     scanf("%lu %lu %lu", &bathroom_size, &situation, &group_size);
 
-    dummy_bathroom_head = calloc( sizeof(Student), bathroom_size );
-    bathroom_tail = calloc( sizeof(Student*), bathroom_size );
-    bathroom_group_tail = calloc( sizeof(Student**), bathroom_size );
-    bathroom_group_head = calloc( sizeof(Student**), bathroom_size );
+    bathroom = calloc( sizeof(Bathroom), bathroom_size );
     close_bathroom = calloc( sizeof(bool), bathroom_size );
-
     for( int i = 0; i < bathroom_size; i++ ) {
-        *(bathroom_tail + i) = (dummy_bathroom_head + i);
-        *(bathroom_group_tail + i) = calloc( sizeof(Student*), group_size );
-        *(bathroom_group_head + i) = calloc( sizeof(Student*), group_size );
+        (bathroom + i)->group_head = calloc( sizeof(Student*), group_size );
+        (bathroom + i)->group_tail = calloc( sizeof(Student*), group_size );
+        (bathroom + i)->next_group = calloc( sizeof(Student*), group_size );
+        (bathroom + i)->prev_group = calloc( sizeof(Student*), group_size );
     }
 
     char command[20] = {0};
@@ -63,159 +124,225 @@ int main() {
             scanf( "%lu", &bathroom_id );
             close( bathroom_id );
         }
-        printf("\nHEAD:\n");
-        for( int i = 0; i < bathroom_size; i++ ) {
-            for( int j = 0; j < group_size; j++ ) {
-                printf("%p ", bathroom_group_head[i][j]);
-            }
-            printf("\n");
-        }
-        printf("\nTAIL:\n");
-        for( int i = 0; i < bathroom_size; i++ ) {
-            for( int j = 0; j < group_size; j++ ) {
-                printf("%p ", bathroom_group_tail[i][j]);
-            }
-            printf("\n");
-        }
-        travel();
+        debug();
     }
     printf("-------------\n");
     travel();
-
     return 0;
+}
+
+Student *XOR( Student *a, Student *b ) {
+    return (Student*)(((uint64_t)a) ^ ((uint64_t)b));
 }
 
 void travel() {
     for( int i = 0; i < bathroom_size; i++ ) {
-        bool reverse = false;
-        Student *head = (dummy_bathroom_head + i)->next ;
-        while( head != NULL ) {
-            printf( "%lu(%ld) ", head->id, head->group );
-            reverse ^= head->flag;
-            if(reverse) {
-                head = head->prev;
-            }
-            else {
-                head = head->next;
-            }
+        Student *prev = NULL;
+        Student *Head = (bathroom + i)->head;
+        while( Head ) {
+            printf( "%lu(%ld)(%p)(%p) ", Head->id, Head->group, Head->link, Head );
+            Student *tmp = Head;
+            Head = XOR( Head->link, prev );
+            prev = tmp;
         }
         printf( "\n" );
     }
-    
     return;
 }
 
 void enter( uint64_t group_id, uint64_t id, uint64_t bathroom_id ) {
-    Student *new_student = calloc( 1, sizeof(Student) );
-    new_student->group = group_id;
+    Bathroom *cur_bathroom = bathroom + bathroom_id;
+    Student **group_head = cur_bathroom->group_head + group_id;
+    Student **group_tail = cur_bathroom->group_tail + group_id;
+    Student **next_group = cur_bathroom->next_group + group_id;
+
+    Student *new_student = calloc( sizeof(Student), 1 );
     new_student->id = id;
-    new_student->flag = false;
+    new_student->group = group_id;
 
-    Student **group_tail = *(bathroom_group_tail + bathroom_id) + group_id ;
-    Student **group_head = *(bathroom_group_head + bathroom_id) + group_id ;
-    Student **last_Student = bathroom_tail + bathroom_id;
-
-    if( (*group_tail) == NULL || (*group_tail)->next == NULL ) {
-        (*last_Student)->next = new_student;
-        new_student->prev = (*last_Student);
-        (*last_Student) = (*last_Student)->next;
-        if( (*group_tail) == NULL ) {
-            (*group_head) = new_student;
+    if( cur_bathroom->tail == NULL ) {
+        new_student->link = NULL;
+        cur_bathroom->head = new_student;
+        cur_bathroom->tail = new_student;
+        *group_head = new_student;
+        *group_tail = new_student;
+    }
+    else if( *group_tail == NULL ){
+        *(cur_bathroom->next_group + cur_bathroom->tail->group) = new_student;
+        *(cur_bathroom->prev_group + group_id) = cur_bathroom->tail;
+        
+        new_student->link = XOR( cur_bathroom->tail, NULL );
+        cur_bathroom->tail->link = XOR( cur_bathroom->tail->link, new_student );
+        cur_bathroom->tail = new_student;
+        *group_head = new_student;
+        *group_tail = new_student;
+    }
+    else if( *group_tail == cur_bathroom->tail ) {
+        if( cur_bathroom->tail->group != group_id ) {
+            *(cur_bathroom->next_group + cur_bathroom->tail->group) = new_student;
         }
-        (*group_tail) = new_student;
+        *(cur_bathroom->prev_group + group_id) = cur_bathroom->tail;
+        new_student->link = XOR( cur_bathroom->tail, NULL );
+        cur_bathroom->tail->link = XOR( cur_bathroom->tail->link, new_student );
+        cur_bathroom->tail = new_student;
+        *group_tail = new_student;
     }
     else {
-        Student *next = (*group_tail)->next;
-        (*group_tail)->next = new_student;
-        new_student->prev = (*group_tail);
-        next->prev = new_student;
-        new_student->next = next;
-        (*group_tail) = new_student;
+        *(cur_bathroom->prev_group + (*next_group)->group) = new_student;
+        (*group_tail)->link = XOR( new_student, XOR( (*group_tail)->link, *next_group ) );
+        new_student->link = XOR( *group_tail, *next_group );
+        (*next_group)->link = XOR( new_student, XOR( (*next_group)->link, *group_tail ) );
+        *group_tail = new_student;
     }
+    
     return;
 }
-
-
 void leave( uint64_t bathroom_id ) {
+    Bathroom *cur_bathroom = bathroom + bathroom_id;
+    Student *last = cur_bathroom->tail;
+    Student *prev = XOR( last->link, NULL );
+    Student **group_head = cur_bathroom->group_head + last->group;
+    Student **group_tail = cur_bathroom->group_tail + last->group;
+    Student **next_group = cur_bathroom->next_group + prev->group;
+    Student **prev_groop = cur_bathroom->prev_group + last->group;
     
-    Student *last_student = *(bathroom_tail + bathroom_id);
-    Student **group_tail = *(bathroom_group_tail + bathroom_id) + (*(bathroom_tail + bathroom_id))->group;
-    Student **group_head = *(bathroom_group_head + bathroom_id) + (*(bathroom_tail + bathroom_id))->group;
-    
-    *(bathroom_tail + bathroom_id) = (*(bathroom_tail + bathroom_id))->prev;
-
-    (*(bathroom_tail + bathroom_id))->next = NULL;
-    if( *(bathroom_tail + bathroom_id) == (dummy_bathroom_head + bathroom_id) || last_student->group != (*bathroom_tail + bathroom_id)->group ) {
-        (*group_tail) = NULL;
-        (*group_head) = NULL;
+    if( cur_bathroom->head == cur_bathroom->tail ) {
+        cur_bathroom->head = NULL;
+        cur_bathroom->tail = NULL;
+        *next_group = NULL;
+        *prev_groop = NULL;
     }
     else {
-        (*group_tail) = *(bathroom_tail + bathroom_id);
+        cur_bathroom->tail = prev;
+        prev->link = XOR( prev->link, last );
     }
-    
-    free(last_student);
+        
+    if( *group_head == *group_tail ) {
+        *group_head = NULL;
+        *group_tail = NULL;
+        *next_group = NULL;
+        *prev_groop = NULL;
+    }
+    else {
+        *group_head = prev;
+    }
 
     return;
 }
 
 void go( uint64_t bathroom_id ) {
-    Student *first_student = (dummy_bathroom_head + bathroom_id)->next;
-    Student **group_tail = *(bathroom_group_tail + bathroom_id) + (dummy_bathroom_head + bathroom_id)->next->group;
-    Student **group_head = *(bathroom_group_head + bathroom_id) + (dummy_bathroom_head + bathroom_id)->next->group;
+    Bathroom *cur_bathroom = bathroom + bathroom_id;
+    Student *frist = cur_bathroom->head;
+    Student *next = XOR( NULL, frist->link );
+    Student **group_head = cur_bathroom->group_head + frist->group;
+    Student **group_tail = cur_bathroom->group_tail + frist->group;
+    Student **next_group = cur_bathroom->next_group + frist->group;
+    Student **prev_group = cur_bathroom->prev_group + next->group;
     
-    (dummy_bathroom_head + bathroom_id)->next = (dummy_bathroom_head + bathroom_id)->next->next;
-    if( (dummy_bathroom_head + bathroom_id)->next != NULL ) {
-        (dummy_bathroom_head + bathroom_id)->next->prev = (dummy_bathroom_head + bathroom_id);
-        if( first_student->group != (dummy_bathroom_head + bathroom_id)->next->group ) {
-            (*group_tail) = NULL;
-            (*group_head) = NULL;
-        }
-        else{
-            (*group_head) = (dummy_bathroom_head + bathroom_id)->next;
-        }
+    if( cur_bathroom->head == cur_bathroom->tail ) {
+        cur_bathroom->head = NULL;
+        cur_bathroom->tail = NULL;
+        *next_group = NULL;
+        *prev_group = NULL;
     }
     else {
-        (*group_tail) = NULL;
-        (*group_head) = NULL;
-        *(bathroom_tail + bathroom_id) = (dummy_bathroom_head + bathroom_id);
+        cur_bathroom->head = next;
+        next->link = XOR( frist, next->link );
     }
-    free(first_student);
+
+    if( *group_head == *group_tail ) {
+        *group_head = NULL;
+        *group_tail = NULL;
+        *next_group = NULL;
+        *prev_group = NULL;
+    }
+    else {
+        *group_head = next;
+    }
+
     return;
 }
 
 void close( uint64_t bathroom_id ) {
-    *(close_bathroom + bathroom_id) = true; 
-    uint64_t next_bathroom = bathroom_id;
-    while( *(close_bathroom + next_bathroom) == true ) {
-        next_bathroom--;
-        next_bathroom = (next_bathroom + bathroom_size) % bathroom_size;
+    *(close_bathroom + bathroom_id) = true;
+    uint64_t next_bathroom_id = bathroom_id;
+    while( *(close_bathroom + next_bathroom_id) == true ) {
+        next_bathroom_id--;
+        next_bathroom_id = (next_bathroom_id + bathroom_size) % bathroom_size;
     }
+    Bathroom *leaveing_bathroom = bathroom + bathroom_id;
+    Bathroom *entering_bathroom = bathroom + next_bathroom_id;
 
-    Student *leaveing_bathroom_head = dummy_bathroom_head + bathroom_id;
-    Student *entering_bathroom_head = dummy_bathroom_head + next_bathroom;
+    while( leaveing_bathroom->tail != NULL ) {
+        Student **leaveing_group_head = leaveing_bathroom->group_head + leaveing_bathroom->tail->group;
+        Student **leaveing_group_tail = leaveing_bathroom->group_tail + leaveing_bathroom->tail->group;
 
-    while( leaveing_bathroom_head->next != NULL ) {
-        Student **leaveing_group_head = *(bathroom_group_head + bathroom_id) + leaveing_bathroom_head->next->group;
-        Student **leaveing_group_tail = *(bathroom_group_tail + bathroom_id) + leaveing_bathroom_head->next->group;
-        Student **entering_group_tail = *(bathroom_group_tail + next_bathroom) + entering_bathroom_head->next->group;
+        printf("\nMOVING:%lu\n", leaveing_bathroom->tail->group);
 
-        if( *entering_group_tail != NULL ) {
-            (*entering_group_tail)->next = *leaveing_group_tail;
-            (*leaveing_group_tail)->next = *entering_group_tail;
-            (*leaveing_group_tail)->flag = true;
+        leaveing_bathroom->tail = *(leaveing_bathroom->prev_group + leaveing_bathroom->tail->group);
+
+        
+        if( *leaveing_group_head == *leaveing_group_tail ) {
+            
+            printf("1111111\n");
+            enter( (*leaveing_group_head)->group, (*leaveing_group_head)->id, next_bathroom_id );
+            if( leaveing_bathroom->tail != NULL ) {
+                leaveing_bathroom->tail->link = XOR( leaveing_bathroom->tail->link, *leaveing_group_head );
+            }
+            free(*leaveing_group_head);
         }
         else {
-            (*(bathroom_tail + bathroom_id))->next = *leaveing_group_tail;
-            (*leaveing_group_tail)->next = *(bathroom_tail + bathroom_id);
-        }
+            if( entering_bathroom->tail == NULL ) {
+                printf("2222222\n");
+                (*leaveing_group_head)->link = XOR( (*leaveing_group_head)->link, *(leaveing_bathroom->prev_group + (*leaveing_group_head)->group ) );
+                if( leaveing_bathroom->tail != NULL ) {
+                    leaveing_bathroom->tail->link = XOR( leaveing_bathroom->tail->link, *leaveing_group_head );
+                }
+                entering_bathroom->head = *leaveing_group_tail;
+                entering_bathroom->tail = *leaveing_group_head;
+                *(entering_bathroom->group_head + (*leaveing_group_tail)->group) = *leaveing_group_tail;
+                *(entering_bathroom->group_tail + (*leaveing_group_tail)->group) = *leaveing_group_head; 
+            }
+            else if( *(entering_bathroom->group_tail + (*leaveing_group_tail)->group) == NULL ) {
+                printf("3333333\n");
+                (*leaveing_group_tail)->link = XOR( (*leaveing_group_tail)->link, entering_bathroom->tail );
+                (*leaveing_group_head)->link = XOR( (*leaveing_group_head)->link, *(leaveing_bathroom->prev_group + (*leaveing_group_head)->group ) );
+                if( leaveing_bathroom->tail != NULL ) {
+                    leaveing_bathroom->tail->link = XOR( leaveing_bathroom->tail->link, *leaveing_group_head );
+                }
+                *(entering_bathroom->next_group + entering_bathroom->tail->group) = *leaveing_group_tail;
+                *(entering_bathroom->prev_group + (*leaveing_group_tail)->group) = entering_bathroom->tail;
+                entering_bathroom->tail = *leaveing_group_head;
+                *(entering_bathroom->group_head + (*leaveing_group_tail)->group) = *leaveing_group_tail;
+                *(entering_bathroom->group_tail + (*leaveing_group_tail)->group) = *leaveing_group_head; 
+            }
+            else {
+                printf("4444444\n");
+                Student **entering_group_head = entering_bathroom->group_tail + (*leaveing_group_tail)->group;
+                Student **entering_group_tail = entering_bathroom->next_group + (*leaveing_group_tail)->group;
+                printf("%p %p\n", *entering_group_head, *entering_group_tail );
+                (*leaveing_group_tail)->link = XOR( (*leaveing_group_tail)->link, *entering_group_head );
+                (*entering_group_head)->link = XOR( (*leaveing_group_tail), XOR( (*entering_group_head)->link, *entering_group_tail ) );
 
-        if( *entering_group_tail != NULL && (*entering_group_tail)->next != NULL ) {
-            (*leaveing_group_head)->prev = (*entering_group_tail)->next;
-            ((*entering_group_tail)->next)->prev = *leaveing_group_head;
-        }
-        else {
-            (*leaveing_group_head)->prev = NULL;
+                (*leaveing_group_head)->link = XOR( (*leaveing_group_head)->link, *(leaveing_bathroom->prev_group + (*leaveing_group_head)->group ) );
+                (*leaveing_group_head)->link = XOR( (*leaveing_group_head)->link, *entering_group_tail );
+                (*entering_group_tail)->link = XOR( (*leaveing_group_head), XOR( (*entering_group_tail)->link, *entering_group_head ) );
+
+                if( leaveing_bathroom->tail != NULL ) {
+                    leaveing_bathroom->tail->link = XOR( leaveing_bathroom->tail->link, *leaveing_group_head );
+                }
+                *(entering_bathroom->next_group + (*leaveing_group_head)->group) = *entering_group_tail;
+                *(entering_bathroom->prev_group + (*entering_group_tail)->group) = *leaveing_group_head;
+
+                *(entering_bathroom->group_tail + (*leaveing_group_tail)->group) = *leaveing_group_head; 
+                if( *entering_group_tail == NULL ) {
+                    entering_bathroom->tail = (*leaveing_group_head);
+                }
+            }
+            
         }
         
     }
+    leaveing_bathroom->head = NULL;
+
 }
