@@ -120,7 +120,6 @@ void enter( uint64_t group_id, uint64_t id, uint64_t bathroom_id ) {
         if( cur_bathroom->tail->group != group_id ) {
             *(cur_bathroom->next_group + cur_bathroom->tail->group) = new_student;
         }
-        *(cur_bathroom->prev_group + group_id) = cur_bathroom->tail;
         new_student->link = XOR( cur_bathroom->tail, NULL );
         cur_bathroom->tail->link = XOR( cur_bathroom->tail->link, new_student );
         cur_bathroom->tail = new_student;
@@ -142,14 +141,10 @@ void leave( uint64_t bathroom_id ) {
     Student *prev = XOR( last->link, NULL );
     Student **group_head = cur_bathroom->group_head + last->group;
     Student **group_tail = cur_bathroom->group_tail + last->group;
-    Student **next_group = cur_bathroom->next_group + prev->group;
-    Student **prev_groop = cur_bathroom->prev_group + last->group;
     
     if( cur_bathroom->head == cur_bathroom->tail ) {
         cur_bathroom->head = NULL;
         cur_bathroom->tail = NULL;
-        *next_group = NULL;
-        *prev_groop = NULL;
     }
     else {
         cur_bathroom->tail = prev;
@@ -159,11 +154,13 @@ void leave( uint64_t bathroom_id ) {
     if( *group_head == *group_tail ) {
         *group_head = NULL;
         *group_tail = NULL;
-        *next_group = NULL;
-        *prev_groop = NULL;
+        *(cur_bathroom->prev_group + last->group) = NULL;
+        if( cur_bathroom->head != NULL ) {
+            *(cur_bathroom->next_group + prev->group) = NULL;
+        }
     }
     else {
-        *group_head = prev;
+        *group_tail = prev;
     }
 
     return;
@@ -175,14 +172,10 @@ void go( uint64_t bathroom_id ) {
     Student *next = XOR( NULL, frist->link );
     Student **group_head = cur_bathroom->group_head + frist->group;
     Student **group_tail = cur_bathroom->group_tail + frist->group;
-    Student **next_group = cur_bathroom->next_group + frist->group;
-    Student **prev_group = cur_bathroom->prev_group + next->group;
     
     if( cur_bathroom->head == cur_bathroom->tail ) {
         cur_bathroom->head = NULL;
         cur_bathroom->tail = NULL;
-        *next_group = NULL;
-        *prev_group = NULL;
     }
     else {
         cur_bathroom->head = next;
@@ -192,8 +185,10 @@ void go( uint64_t bathroom_id ) {
     if( *group_head == *group_tail ) {
         *group_head = NULL;
         *group_tail = NULL;
-        *next_group = NULL;
-        *prev_group = NULL;
+        *(cur_bathroom->next_group + frist->group) = NULL;
+        if( cur_bathroom->head != NULL ) {
+            *(cur_bathroom->prev_group + next->group) = NULL;
+        } 
     }
     else {
         *group_head = next;
@@ -217,10 +212,9 @@ void close( uint64_t bathroom_id ) {
         Student **leaveing_group_tail = leaveing_bathroom->group_tail + leaveing_bathroom->tail->group;
 
         leaveing_bathroom->tail = *(leaveing_bathroom->prev_group + leaveing_bathroom->tail->group);
-
+        
         
         if( *leaveing_group_head == *leaveing_group_tail ) {
-
             enter( (*leaveing_group_head)->group, (*leaveing_group_head)->id, next_bathroom_id );
             if( leaveing_bathroom->tail != NULL ) {
                 leaveing_bathroom->tail->link = XOR( leaveing_bathroom->tail->link, *leaveing_group_head );
@@ -241,6 +235,7 @@ void close( uint64_t bathroom_id ) {
             else if( *(entering_bathroom->group_tail + (*leaveing_group_tail)->group) == NULL ) {
                 (*leaveing_group_tail)->link = XOR( (*leaveing_group_tail)->link, entering_bathroom->tail );
                 (*leaveing_group_head)->link = XOR( (*leaveing_group_head)->link, *(leaveing_bathroom->prev_group + (*leaveing_group_head)->group ) );
+                entering_bathroom->tail->link = XOR( entering_bathroom->tail->link, (*leaveing_group_tail) );
                 if( leaveing_bathroom->tail != NULL ) {
                     leaveing_bathroom->tail->link = XOR( leaveing_bathroom->tail->link, *leaveing_group_head );
                 }
@@ -253,20 +248,25 @@ void close( uint64_t bathroom_id ) {
             else {
                 Student **entering_group_head = entering_bathroom->group_tail + (*leaveing_group_tail)->group;
                 Student **entering_group_tail = entering_bathroom->next_group + (*leaveing_group_tail)->group;
-
+                
                 (*leaveing_group_tail)->link = XOR( (*leaveing_group_tail)->link, *entering_group_head );
                 (*entering_group_head)->link = XOR( (*leaveing_group_tail), XOR( (*entering_group_head)->link, *entering_group_tail ) );
-
+                
                 (*leaveing_group_head)->link = XOR( (*leaveing_group_head)->link, *(leaveing_bathroom->prev_group + (*leaveing_group_head)->group ) );
                 (*leaveing_group_head)->link = XOR( (*leaveing_group_head)->link, *entering_group_tail );
-                (*entering_group_tail)->link = XOR( (*leaveing_group_head), XOR( (*entering_group_tail)->link, *entering_group_head ) );
+                if( (*entering_group_tail) != NULL ) {
+                    (*entering_group_tail)->link = XOR( (*leaveing_group_head), XOR( (*entering_group_tail)->link, *entering_group_head ) );
+                }
 
                 if( leaveing_bathroom->tail != NULL ) {
                     leaveing_bathroom->tail->link = XOR( leaveing_bathroom->tail->link, *leaveing_group_head );
                 }
-                *(entering_bathroom->next_group + (*leaveing_group_head)->group) = *entering_group_tail;
-                *(entering_bathroom->prev_group + (*entering_group_tail)->group) = *leaveing_group_head;
-
+                
+                if( *entering_group_tail != NULL ) {
+                    *(entering_bathroom->next_group + (*leaveing_group_head)->group) = *entering_group_tail;
+                    *(entering_bathroom->prev_group + (*entering_group_tail)->group) = *leaveing_group_head;
+                }
+                
                 *(entering_bathroom->group_tail + (*leaveing_group_tail)->group) = *leaveing_group_head; 
                 if( *entering_group_tail == NULL ) {
                     entering_bathroom->tail = (*leaveing_group_head);
