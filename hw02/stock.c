@@ -1,18 +1,20 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include "price.h"
 
 #define MAX_HEAP_SIZE 1024 * 1024 + 5
-#define MAX_K_SIZE 1000000
+#define MAX_K_SIZE 1000005
 
 typedef struct {
-    int64_t belonging;
-    int64_t data;
-    int64_t day;
+    uint64_t belonging;
+    uint64_t data;
+    uint64_t day;
 }Price;
 
-Price heap[MAX_HEAP_SIZE];
+Price heap[MAX_HEAP_SIZE] = {0};
+uint64_t min_price_data[MAX_K_SIZE] = {0};
 uint64_t heap_tail = 0;
 
 void swap( Price *a, Price *b ) {
@@ -48,14 +50,54 @@ void pop() {
             cur_index = min;
         }
         else {
-            break;;
+            break;
         }
     }
     return;
 }
 
+int cmp ( const void *a , const void *b ) { 
+    return *(int *)a > *(int *)b; 
+}
+
+uint64_t get_median( uint64_t data[] ) {
+    
+}
 
 
+void median_of_medians( uint64_t data[], uint64_t size ) {
+    uint64_t l = 0, r = size;
+    uint32_t pivot = get_median( data, 0, size );
+}
+
+void lower_bound( uint64_t stock, uint64_t k, uint32_t N ) {
+    uint64_t l = 0, r = k;
+
+    while( l <= r ) {
+        int m = ( l + r ) / 2;
+
+        if( min_price_data[m] == price( stock, k - m ) ) {
+            printf( "%lu", min_price_data[m] );
+            return;
+        }
+        else if( min_price_data[m] > price( stock, k - m + N ) ) {
+            r = m - 1;
+        }
+        else if( min_price_data[m] < price( stock, k - m - N ) ) {
+            l = m + 1;
+        }
+        else {
+            uint64_t extra_data[2 * N + 1];
+            uint64_t size = 0;
+            for( int i = k - m - N <= 0 ? 1 : k - m - N; i < k - m + N; i++ ) {
+                extra_data[size] = min_price_data[i];
+            }
+            median_of_medians( extra_data, size );
+        }
+    }
+    printf( "%lu", min_price_data[l] );
+    return;
+}
 
 int main() {
     uint32_t stock_size = 0, question = 0, increasing_day = 0;
@@ -72,20 +114,28 @@ int main() {
         }
     }
 
-    uint64_t min_price_data[MAX_K_SIZE] = {0}, data_size = 0;
-    while( heap_tail != 0 && data_size < MAX_HEAP_SIZE ) {
+    uint64_t data_size = 0;
+    while( heap_tail != 0 && data_size <= MAX_K_SIZE  ) {
         min_price_data[data_size++] = heap[0].data;
         if( heap[0].day + increasing_day <= 1000000000 ) {
             Price p;
             p.belonging = heap[0].belonging;
             p.data = price( heap[0].belonging, heap[0].day + increasing_day );
             p.day = heap[0].day + increasing_day;
-            pop();
             push( p );
         }
+        pop();
     }
-    for( int i = 0; i < data_size; i++ ) {
-        printf( "%ld ", min_price_data[i] );
+    
+    for( int i = 0; i < question; i++ ) {
+        uint64_t extra_stock = 0, k = 0;
+        scanf( "%lu %lu", &extra_stock, &k );
+        if( extra_stock == 0 ) {
+            printf( "%lu\n", min_price_data[k] );
+        }
+        else {
+            lower_bound( extra_stock, k, increasing_day );
+        }
     }
     return 0;
 }
