@@ -6,6 +6,8 @@
 
 #define MAX_HEAP_SIZE 1024 * 1024 + 5
 #define MAX_K_SIZE 1000005
+#define MIN(a, b) ( a < b ? a : b )
+#define MAX(a, b) ( a > b ? a : b )
 
 typedef struct {
     uint64_t belonging;
@@ -19,6 +21,12 @@ uint64_t heap_tail = 0;
 
 void swap( Price *a, Price *b ) {
     Price tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+void swap_( uint64_t *a, uint64_t *b ) {
+    uint64_t tmp = *a;
     *a = *b;
     *b = tmp;
 }
@@ -60,21 +68,63 @@ int cmp ( const void *a , const void *b ) {
     return *(int *)a > *(int *)b; 
 }
 
-uint64_t get_median( uint64_t data[] ) {
+uint64_t partition( uint64_t data[], uint64_t size, uint64_t pivot ) {
+    for( int i = 0; i < size; i++ ) {
+        if( data[i] == pivot ) {
+            swap_( &data[i], &data[size - 1] );
+        }
+    }
     
+    uint64_t len = 0;
+    for( int i = 0; i < size - 1; i++ ) {
+        if( data[i] <= pivot ) {
+            swap_( &data[len], &data[i] );
+            len++;
+        }
+    }
+    swap_( &data[size - 1], &data[len] );
+
+    return len;
 }
 
+uint64_t median_of_medians( uint64_t data[], uint64_t size, uint64_t kth ) {
+    if( size == 1 ) {
+        return data[0];
+    }
 
-void median_of_medians( uint64_t data[], uint64_t size ) {
-    uint64_t l = 0, r = size;
-    uint32_t pivot = get_median( data, 0, size );
+    uint64_t next_size = 0;
+    for( int i = 0; i < size; i+= 5 ) {
+        int len = MIN( 5, size - i );
+        qsort( data + i, len, sizeof(uint64_t), cmp );
+        swap_( &data[i / 5], &data[i + len / 2] );
+        next_size++;
+    }
+
+    uint64_t median = 0;
+    if( next_size > 1 ) {
+        median = median_of_medians( data, next_size, next_size / 2 );
+    }
+    else {
+        median = data[0];
+    }
+    
+    uint64_t part = partition( data, size, median );
+
+    if( part == kth ) {
+        return median;
+    }
+    else if( part > kth ) {
+        return median_of_medians( data, part, kth );
+    } 
+    else {
+        return median_of_medians( data + part, size - part, kth - part );
+    }
 }
 
 void lower_bound( uint64_t stock, uint64_t k, uint32_t N ) {
-    uint64_t l = 0, r = k;
-
+    uint64_t l = 1, r = k;
     while( l <= r ) {
-        int m = ( l + r ) / 2;
+        uint64_t m = ( l + r ) / 2;
 
         if( min_price_data[m] == price( stock, k - m ) ) {
             printf( "%lu", min_price_data[m] );
@@ -87,15 +137,36 @@ void lower_bound( uint64_t stock, uint64_t k, uint32_t N ) {
             l = m + 1;
         }
         else {
-            uint64_t extra_data[2 * N + 1];
-            uint64_t size = 0;
-            for( int i = k - m - N <= 0 ? 1 : k - m - N; i < k - m + N; i++ ) {
-                extra_data[size] = min_price_data[i];
+            uint64_t extra_data[2 * N - 1];
+            memset( extra_data, 0, 2 * N - 1 );
+            for( int i = 0, j = k - m - N + 1; j <= k - m + N - 1; i++, j++ ) {
+                if( j >= 1 ) {
+                    extra_data[i] = price( stock, j );
+                }
             }
-            median_of_medians( extra_data, size );
+
+            uint64_t p = median_of_medians( extra_data, 2 * N - 1, N );
+
+            if( min_price_data[m] == p ) {
+                printf( "%lu", min_price_data[m] );
+                return;
+            }
+            else if( min_price_data[m] > p) {
+                r = m - 1;
+            }
+            else if( min_price_data[m] < p ) {
+                l = m + 1;
+            }
         }
     }
-    printf( "%lu", min_price_data[l] );
+    uint64_t kl = price( stock, k - l ), kr = price( stock, k - r );
+    uint64_t ml = min_price_data[l], mr = min_price_data[r];
+    if( kl < kr ) {
+        printf("%lu\n", MAX( kr, mr ) );
+    }
+    else {
+        printf("%lu\n", MAX( kl, ml ) );
+    }
     return;
 }
 
@@ -114,8 +185,8 @@ int main() {
         }
     }
 
-    uint64_t data_size = 0;
-    while( heap_tail != 0 && data_size <= MAX_K_SIZE  ) {
+    uint64_t data_size = 1;
+    while( heap_tail != 0 && data_size <= 1000000  ) {
         min_price_data[data_size++] = heap[0].data;
         if( heap[0].day + increasing_day <= 1000000000 ) {
             Price p;
