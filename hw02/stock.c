@@ -7,7 +7,6 @@
 #define MAX_HEAP_SIZE 1024 * 1024 + 5
 #define MAX_K_SIZE 1000005
 #define MIN(a, b) ( a < b ? a : b )
-#define MAX(a, b) ( a > b ? a : b )
 
 typedef struct {
     uint64_t belonging;
@@ -65,7 +64,7 @@ void pop() {
 }
 
 int cmp ( const void *a , const void *b ) { 
-    return *(int *)a > *(int *)b; 
+    return *(uint64_t *)a > *(uint64_t *)b; 
 }
 
 uint64_t partition( uint64_t data[], uint64_t size, uint64_t pivot ) {
@@ -121,34 +120,48 @@ uint64_t median_of_medians( uint64_t data[], uint64_t size, uint64_t kth ) {
     }
 }
 
+
 void lower_bound( uint64_t stock, uint64_t k, uint32_t N ) {
     uint64_t l = 1, r = k;
+    uint64_t extra_data[2 * N - 1];
+    uint64_t m;
+    \*
+    for( int i = 1 ; i <= 10; i++ ) {
+        printf("%llu ", price(stock, i) );
+    }
+    *\
     while( l <= r ) {
-        uint64_t m = ( l + r ) / 2;
+        m = ( l + r ) / 2;
+        printf("[DEBUG]l r: %lu %lu", l, r);
 
-        if( min_price_data[m] == price( stock, k - m ) ) {
-            printf( "%lu", min_price_data[m] );
-            return;
-        }
-        else if( min_price_data[m] > price( stock, k - m + N ) ) {
+        if( min_price_data[m] >= price( stock, k - m + N ) ) {
+            printf("[DEBUG]r move \n");
             r = m - 1;
         }
-        else if( min_price_data[m] < price( stock, k - m - N ) ) {
+        else if( min_price_data[m] <= ( k <= m + N ? 0 :price( stock, k - m - N ) ) ) {
+            printf("[DEBUG]l move \n");
             l = m + 1;
         }
         else {
-            uint64_t extra_data[2 * N - 1];
-            memset( extra_data, 0, 2 * N - 1 );
-            for( int i = 0, j = k - m - N + 1; j <= k - m + N - 1; i++, j++ ) {
+
+            memset( extra_data, 0, (2 * N - 1) * sizeof( uint64_t ) );
+            int64_t start = (int64_t)k - (int64_t)m - (int64_t)N + 1;
+            int64_t end = (int64_t)k - (int64_t)m + (int64_t)N - 1;
+            printf("[DEBUG]start end:%ld %ld\n", start, end);
+            for( int i = 0, j = start; j <= end ; i++, j++ ) {
                 if( j >= 1 ) {
                     extra_data[i] = price( stock, j );
                 }
             }
+            
 
-            uint64_t p = median_of_medians( extra_data, 2 * N - 1, N );
+            //uint64_t p = median_of_medians( extra_data, 2 * N - 1, N - 1 );
+            qsort( extra_data, 2 * N - 1, sizeof(uint64_t), cmp );
 
+            uint64_t p = extra_data[N - 1];
+            printf("[DEBUG]p:%lu\n", p);
             if( min_price_data[m] == p ) {
-                printf( "%lu", min_price_data[m] );
+                printf( "%lu\n", min_price_data[m] );
                 return;
             }
             else if( min_price_data[m] > p) {
@@ -159,20 +172,20 @@ void lower_bound( uint64_t stock, uint64_t k, uint32_t N ) {
             }
         }
     }
-    uint64_t kl = price( stock, k - l ), kr = price( stock, k - r );
-    uint64_t ml = min_price_data[l], mr = min_price_data[r];
-    if( kl < kr ) {
-        printf("%lu\n", MAX( kr, mr ) );
-    }
-    else {
-        printf("%lu\n", MAX( kl, ml ) );
-    }
+
+    uint64_t p1 = min_price_data[l], p2 = extra_data[(k - r) - (k - m - N ) - 1];//median_of_medians( extra_data, 2 * N - 1, (k - r) - (k - m - N) - 1 );
+    uint64_t p3 = min_price_data[r], p4 = median_of_medians( extra_data, 2 * N - 1, (k - l) - (k - m - N) - 1 );
+    printf("[DEBUG]p:%lu %lu %lu %lu\n", p1, p2, p3, p4);
+    printf("[DEBUG]l r:%lu %lu\n", l, r);
+    printf( "%lu\n", MIN(p1, p2) );
     return;
 }
 
+
+
 int main() {
-    uint32_t stock_size = 0, question = 0, increasing_day = 0;
-    scanf( "%u %u %u", &stock_size, &question, &increasing_day );
+    uint64_t stock_size = 0, question = 0, increasing_day = 0;
+    scanf( "%lu %lu %lu", &stock_size, &question, &increasing_day );
     uint64_t stocks[stock_size];
     for( int i = 0; i < stock_size; i++ ) {
         scanf( "%lu", &stocks[i] );
