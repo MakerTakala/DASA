@@ -37,12 +37,6 @@ int main() {
         scanf( "%s", str[i] );
         str_hash[i] = hashing( str[i] );
     }
-
-    for(  int i = 0; i < K; i++  ) {
-        printf( "%s: %lu\n",str[i], str_hash[i] );
-    }
-    printf("\n");
-
     
     for( int i = 0; i < K; i++ ) {
         sort_str_hash[i].hash = str_hash[i];
@@ -58,27 +52,20 @@ int main() {
             ci = 1;
         }
     }
-    printf("repeat:%ld\n", repeat);
 
     int64_t pow = 1, pair1 = 0, pair2 = 0;
     for( int i = L - 1; i >= 0; i-- ) {
         for( int j = 0; j < K; j++ ) {
-            printf("%c:%ld\n", str[j][i], ( ( str_hash[j] - ( ( str[j][i] - '!' ) * pow ) ) % MOD + MOD ) % MOD );
             sort_str_hash[j].hash = ( ( str_hash[j] - ( ( str[j][i] - '!' ) * pow ) ) % MOD + MOD ) % MOD;
             sort_str_hash[j].index = j;
         }
         qsort( sort_str_hash, K, sizeof( magic ), compare );
         
-        printf( "hide:%d\n", i );
-        for(  int j = 0; j < K; j++  ) {
-            printf( "\t%ld\n", sort_str_hash[j].hash );
-        }
         int64_t conti = 1;
         for( int j = 1; j < K; j++ ) {
             if( sort_str_hash[j - 1].hash == sort_str_hash[j].hash ) {
                 pair1 = sort_str_hash[j - 1].index;
                 pair2 = sort_str_hash[j].index;
-                printf("find%lu ", conti);
                 count += conti;
                 conti++;
             }
@@ -86,7 +73,6 @@ int main() {
                 conti = 1;
             }
         }
-        printf("\n");
         pow = ( pow * BASE ) % MOD;
     }
     if( count == 0 ) {
