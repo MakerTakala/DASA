@@ -125,9 +125,8 @@ int main() {
             scanf( "%d", &x );
             day[i].boom = x;
             previous_day = x;
-            while( day[previous_day].boom != 0 ){
-                previous_day = day[previous_day].boom;
-            }
+            add_child( previous_day, i );
+            day[i].previous_day = previous_day;
         }
     }
     
