@@ -39,9 +39,6 @@ int find( int a ) {
 }
 
 int merge( int a, int b ) {
-    for(int i = 0; i <= 5; i++) {
-        printf( "%d ", shop_parent[i] );
-    }
     printf( "\n" );
     printf( "merge %d %d\n", a, b );
     a = find(a);
