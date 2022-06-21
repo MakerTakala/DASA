@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define MAX(a, b) (a > b ? a : b)
+
 long long int id = 1;
 
 typedef struct _Node{
@@ -35,10 +37,6 @@ Node* init_Node( long long int time ) {
     init->second = 0;
     init->cnt = 1;
     return init;
-}
-
-int cmp( const void *a, const void *b ) {
-    return *(long long int *)b - *(long long int *)a;
 }
 
 long long int size( Node *node ){
@@ -103,26 +101,29 @@ void push_reboot( Node **node ) {
     }
 }
 
-
 void pull( Node **node ){
     if( !*node ) return;
     (*node)->size = 1 + size( (*node)->l ) + size( (*node)->r);
+    push_reboot( node );
     push_reboot( &(*node)->l );
     push_reboot( &(*node)->r );
+    pull( &(*node)->l );
+    pull( &(*node)->r );
     (*node)->sum = (*node)->time + sum( (*node)->l ) + sum( (*node)->r);
-    long long int arr[5] = {0};
-    arr[0] = (*node)->time;
-    arr[1] = first( (*node)->l );
-    arr[2] = second( (*node)->l );
-    arr[3] = first( (*node)->r );
-    arr[4] = second( (*node)->r );
-    qsort( arr, 5, sizeof( long long int ), cmp );
-    (*node)->first = arr[0];
-    for( int i = 0; i < 5; i++ ) 
-        if( arr[0] != arr[i] ) {
-            (*node)->second = arr[i];
-            break;
+    long long int compare[5] = {0};
+    compare[0] = (*node)->time;
+    compare[1] = first( (*node)->l );
+    compare[2] = first( (*node)->r );
+    compare[3] = second( (*node)->l );
+    compare[4] = second( (*node)->r );
+    (*node)->first = MAX( MAX( compare[0], compare[1] ) , compare[2] );
+    long long int second = 0;
+    for( int i = 0; i < 5; i++ ) {
+        if( compare[i] < (*node)->first ) {
+            second = MAX( second,  compare[i] );
         }
+    }
+    (*node)->second = second;
     (*node)->cnt = 0;
     if( (*node)->time == (*node)->first )
         (*node)->cnt += 1;
